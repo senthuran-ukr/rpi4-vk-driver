@@ -1,12 +1,8 @@
 #pragma once
 #include <stdlib.h>
-
+#include "caps.h"
 
 #define MAX_PHYSICAL_DEVICES 1
-
-#define UNUSED_VARIABLE(var) (void)var
-
-#define ALLOC(size, alignment, scope) malloc(size)
 
 typedef struct VkPhysicalDevice_T
 {
@@ -21,6 +17,8 @@ typedef struct VkInstance_T
 typedef struct VKDevice_T
 {
     Vk_PhysicalDevice *pPhysicalDevice;
+    uint32_t enabled_extensions_idx[NUM_DEVICE_EXTENSIONS];
+    uint32_t num_enabled_extensions;
 }Vk_Device;
 
 
