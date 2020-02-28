@@ -275,8 +275,10 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateDevice(
 
     ((Vk_Device*)(*pDevice))->pPhysicalDevice = physicalDevice;
 
-    Vk_Device* _pDevice =  (Vk_Device*)*pDevice;
+    *pDevice = ALLOC(sizeof(Vk_Device), 1, VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
+    if(!*pDevice) return VK_ERROR_OUT_OF_HOST_MEMORY;
 
+    Vk_Device* _pDevice =  (Vk_Device*)*pDevice;
 
     // Process supported extensions
     for(uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; ++i)
@@ -309,6 +311,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateDevice(
             const VkDeviceQueueCreateInfo* queue_info = &pCreateInfo->pQueueCreateInfos[i];
             assert(queue_info->queueFamilyIndex < MAX_DEVICE_QUEUE_FAMILY_SUPPORTED);
             _pDevice->queue_family[i].num_queues = queue_info->queueCount;
+            _pDevice->queue_family[i].flags = queue_info->flags;
         }
     }
 
@@ -318,7 +321,13 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateDevice(
 
 VKAPI_ATTR void VKAPI_CALL vkDestroyDevice(
     VkDevice                                    device,
-    const VkAllocationCallbacks*                pAllocator);
+    const VkAllocationCallbacks*                pAllocator)
+{
+    UNUSED_VARIABLE(pAllocator);
+    assert(device);
+    Vk_Device* _device = device;
+    FREE(_device);
+}
 
 
 
