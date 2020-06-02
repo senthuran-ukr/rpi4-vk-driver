@@ -7,6 +7,19 @@
 
 #define SUPPORTED_QUEUE_FLAGS VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT
 
+static const VkQueueFamilyProperties g_queue_family_prop[] = 
+{
+    {
+        .queueFlags = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_SPARSE_BINDING_BIT,
+        .queueCount = 1,
+        .timestampValidBits = 64,
+        .minImageTransferGranularity = {1,1,1}
+    },// UNiversal Queue Family
+};
+
+static const uint32_t num_queue_families = sizeof(g_queue_family_prop) / sizeof(VkQueueFamilyProperties);
+
+
 /*!
  * \brief Returns the spec version number if the device extension is supported, else return -1
  * \param extension
@@ -253,6 +266,19 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetInstanceProcAddr(
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetDeviceProcAddr(
     VkDevice                                    device,
     const char*                                 pName);
+
+
+VKAPI_ATTR VkResult VKAPI_CALL vkGetDeviceQueue(VkDevice  device,
+    uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue)
+{
+    ASSERT(device, "Device must not be NULL");
+    ASSERT(pQueue != NULL, "pQueue must not be NULL");
+
+    ASSERT(queueFamilyIndex < num_queue_families, "queueFamilyIndex must be less than number of queue families supported");
+    ASSERT(queueIndex < device->queue_family[queueFamilyIndex].num_queues);
+    *pQueue = device->queue_family[queueFamilyIndex].queue[queueIndex];
+}
+
 
 VKAPI_ATTR VkResult VKAPI_CALL vkCreateDevice(
     VkPhysicalDevice                            physicalDevice,
