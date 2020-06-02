@@ -6,6 +6,10 @@
 #define NUM_DEVICE_QUEUE_SUPPORTED 1
 #define MAX_DEVICE_QUEUE_FAMILY_SUPPORTED 1
 
+
+#define ASSERT(val))assert(val) 
+
+
 typedef struct VkPhysicalDevice_T
 {
     struct Vk_Instance* instance;

@@ -7,7 +7,6 @@
 
 #define SUPPORTED_QUEUE_FLAGS VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT
 
-
 /*!
  * \brief Returns the spec version number if the device extension is supported, else return -1
  * \param extension
@@ -263,11 +262,11 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateDevice(
 {
     UNUSED_VARIABLE(pAllocator);
 
-    assert(physicalDevice);
-    assert(pCreateInfo);
-    assert(pDevice);
+    ASSERT(physicalDevice, "Physical device must be valid");
+    ASSERT(pCreateInfo);
+    ASSERT(pDevice);
 
-    *pDevice = ALLOC(sizeof(Vk_Device), 1, VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
+    *pDevice = MEM_ALLOC(sizeof(Vk_Device), 1, VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
 
     if(!*pDevice)
         return VK_ERROR_OUT_OF_HOST_MEMORY;
@@ -275,7 +274,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateDevice(
 
     ((Vk_Device*)(*pDevice))->pPhysicalDevice = physicalDevice;
 
-    *pDevice = ALLOC(sizeof(Vk_Device), 1, VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
+    *pDevice = MEM_ALLOC(sizeof(Vk_Device), 1, VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
     if(!*pDevice) return VK_ERROR_OUT_OF_HOST_MEMORY;
 
     Vk_Device* _pDevice =  (Vk_Device*)*pDevice;
@@ -309,14 +308,20 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateDevice(
         for(uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; ++i)
         {
             const VkDeviceQueueCreateInfo* queue_info = &pCreateInfo->pQueueCreateInfos[i];
-            assert(queue_info->queueFamilyIndex < MAX_DEVICE_QUEUE_FAMILY_SUPPORTED);
+
+            // Allocate the memory
+            _pDevice->queue_family[queue_info->queueFamilyIndex].num_queues = queue_info->queueCount;
+            ASSERT(queue_info->queueCount == 1, "Queue Count must be 1");
+            ASSERT(queue_info->queueFamilyIndex < MAX_DEVICE_QUEUE_FAMILY_SUPPORTED, "");
+            for(uint32_t j = 0; j < queue_info->queueCount; ++j)
+            {   
+            }
+
             _pDevice->queue_family[i].num_queues = queue_info->queueCount;
             _pDevice->queue_family[i].flags = queue_info->flags;
         }
     }
-
     return VK_SUCCESS;
-
 }
 
 VKAPI_ATTR void VKAPI_CALL vkDestroyDevice(

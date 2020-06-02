@@ -2,8 +2,6 @@
 #include "defines.h"
 #include "string.h"
 
-
-
 static VkExtensionProperties instance_extensions[] =
 {
     { "VK_KHR_surface", 25 },
@@ -11,8 +9,6 @@ static VkExtensionProperties instance_extensions[] =
     { "VK_EXT_direct_mode_display", 1},
 };
 #define NUM_INSTANCE_EXTENSIONS ARRAY_SIZE(instance_extensions, VkExtensionProperties)
-
-
 
 const static VkExtensionProperties device_extensions[] =
 {
@@ -22,17 +18,8 @@ const static VkExtensionProperties device_extensions[] =
 };
 #define NUM_DEVICE_EXTENSIONS ARRAY_SIZE(device_extensions, VkExtensionProperties)
 
-
 const static VkLayerProperties device_layers[] =
 {
     // layerName, specVersion,implementationVersion, description
     //{"", },
 };
-
-
-
-
-
-
-
-

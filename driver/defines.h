@@ -2,7 +2,7 @@
 
 #define UNUSED_VARIABLE(var) (void)var
 
-#define ALLOC(size, alignment, scope) malloc(size)
-#define FREE(mem) free(mem)
+#define MEM_ALLOC(size, alignment, scope) malloc(size)
+#define MEM_FREE(mem) free(mem)
 
 #define ARRAY_SIZE(x, type) (sizeof(x) / sizeof(type))
