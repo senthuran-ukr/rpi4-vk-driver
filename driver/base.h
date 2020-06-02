@@ -7,8 +7,7 @@
 #define MAX_DEVICE_QUEUE_FAMILY_SUPPORTED 1
 
 
-#define ASSERT(val))assert(val) 
-
+#define ASSERT(val, msg) assert(val) 
 
 typedef struct VkPhysicalDevice_T
 {
@@ -33,10 +32,7 @@ typedef struct DeviceQueueFamily_T
 }DeviceQueueFamily;
 
 
-
-
-
-typedef struct VKDevice_T
+typedef struct
 {
     Vk_PhysicalDevice *pPhysicalDevice;
     uint32_t enabled_extensions_idx[NUM_DEVICE_EXTENSIONS];
