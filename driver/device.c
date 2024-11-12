@@ -14,7 +14,7 @@ static const VkQueueFamilyProperties g_queue_family_prop[] =
         .queueCount = 1,
         .timestampValidBits = 64,
         .minImageTransferGranularity = {1,1,1}
-    },// UNiversal Queue Family
+    },// Universal Queue Family
 };
 
 static const uint32_t num_queue_families = sizeof(g_queue_family_prop) / sizeof(VkQueueFamilyProperties);

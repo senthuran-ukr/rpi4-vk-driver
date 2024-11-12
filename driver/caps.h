@@ -1,7 +1,7 @@
 #include <vulkan/vulkan.h>
 #include "defines.h"
 #include "string.h"
-
+namespace core{
 static VkExtensionProperties instance_extensions[] =
 {
     { "VK_KHR_surface", 25 },
@@ -23,3 +23,11 @@ const static VkLayerProperties device_layers[] =
     // layerName, specVersion,implementationVersion, description
     //{"", },
 };
+
+
+namespace Limits
+{
+  uint32_t MAX_BOUND_DESCRIPTOR_SETS = 16;
+  
+}
+}
