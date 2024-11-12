@@ -4,7 +4,7 @@
 #include "base.h"
 #include "defines.h"
 #include "log.h"
-
+#include  "logical_device.h"
 #define SUPPORTED_QUEUE_FLAGS VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT
 
 static const VkQueueFamilyProperties g_queue_family_prop[] = 
@@ -279,31 +279,14 @@ VKAPI_ATTR VkResult VKAPI_CALL vkGetDeviceQueue(VkDevice  device,
     *pQueue = device->queue_family[queueFamilyIndex].queue[queueIndex];
 }
 
-
-VKAPI_ATTR VkResult VKAPI_CALL vkCreateDevice(
-    VkPhysicalDevice                            physicalDevice,
+namespace core{
+VkResult VkLogicalDevice_::init(
     const VkDeviceCreateInfo*                   pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator,
-    VkDevice*                                   pDevice)
+    const VkAllocationCallbacks*                pAllocator)
 {
     UNUSED_VARIABLE(pAllocator);
 
-    ASSERT(physicalDevice, "Physical device must be valid");
-    ASSERT(pCreateInfo);
-    ASSERT(pDevice);
-
-    *pDevice = MEM_ALLOC(sizeof(Vk_Device), 1, VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
-
-    if(!*pDevice)
-        return VK_ERROR_OUT_OF_HOST_MEMORY;
-    memset(*pDevice, 0, sizeof(Vk_Device));
-
-    ((Vk_Device*)(*pDevice))->pPhysicalDevice = physicalDevice;
-
-    *pDevice = MEM_ALLOC(sizeof(Vk_Device), 1, VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
-    if(!*pDevice) return VK_ERROR_OUT_OF_HOST_MEMORY;
-
-    Vk_Device* _pDevice =  (Vk_Device*)*pDevice;
+    ASSERT(pCreateInfo, "Physical device must be valid");
 
     // Process supported extensions
     for(uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; ++i)
@@ -312,11 +295,11 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateDevice(
         if((extension_id = is_device_extension_supported(
                 pCreateInfo->ppEnabledExtensionNames[i])) != -1)
         {
-            _pDevice->enabled_extensions_idx[i] = extension_id;
-            ++_pDevice->num_enabled_extensions;
+           mInfo.enabledDeviceExtensionsIdx[i] = extension_id;
+            ++mInfo.numEnabledExtensions;
         }
         else {
-            printf("Requested extension %s not supported",
+            LOG_E("Requested extension %s not supported",
                       pCreateInfo->ppEnabledExtensionNames[i]);
         }
     }
@@ -325,8 +308,8 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateDevice(
 
     if(pCreateInfo->pEnabledFeatures)
     {
-        mem_cpy(&_pDevice->enabled_features, pCreateInfo->pEnabledFeatures,sizeof(VkPhysicalDeviceFeatures));
-        update_device_feature(&_pDevice->enabled_features);
+        memcpy(&mInfo.enabledFeatures, pCreateInfo->pEnabledFeatures, sizeof(VkPhysicalDeviceFeatures));
+        update_device_feature(&mInfo.enabledFeatures);
     }
 
     if(pCreateInfo->pQueueCreateInfos)
@@ -338,9 +321,11 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateDevice(
             // Allocate the memory
             _pDevice->queue_family[queue_info->queueFamilyIndex].num_queues = queue_info->queueCount;
             ASSERT(queue_info->queueCount == 1, "Queue Count must be 1");
-            ASSERT(queue_info->queueFamilyIndex < MAX_DEVICE_QUEUE_FAMILY_SUPPORTED, "");
+            ASSERT(queue_info->queueFamilyIndex < limits::MAX_DEVICE_QUEUE_FAMILY_SUPPORTED, "");
+            mQueues.resize(queue_info->queueCount);
             for(uint32_t j = 0; j < queue_info->queueCount; ++j)
             {   
+                mQueues[i] = VkQueue_(queue_info->queueFamilyIndex);
             }
 
             _pDevice->queue_family[i].num_queues = queue_info->queueCount;

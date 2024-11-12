@@ -1,7 +1,14 @@
 #include <vulkan/vulkan.h>
 #include "defines.h"
 #include "string.h"
+#include  "version.h"
+
 namespace core{
+
+
+constexpr uint32_t API_VERSION = VK_API_VERSION_1_0;
+constexpr uint32_t DRIVER_VERSION = VK_MAKE_VERSION(MAJOR_VERSION, MINOR_VESION, PATCH_VERSION);
+
 static VkExtensionProperties instance_extensions[] =
 {
     { "VK_KHR_surface", 25 },
@@ -24,10 +31,21 @@ const static VkLayerProperties device_layers[] =
     //{"", },
 };
 
-
 namespace Limits
 {
-  uint32_t MAX_BOUND_DESCRIPTOR_SETS = 16;
-  
+  constexpr uint32_t MAX_BOUND_DESCRIPTOR_SETS = 16;
+  constexpr uint32_t MAX_VIEWPORTS = 16;
+
+  constexpr uint32_t MAX_IMAGE_LEVELS_1D = 15;
+  constexpr uint32_t MAX_IMAGE_LEVELS_2D = 15;
+  constexpr uint32_t MAX_IMAGE_LEVELS_3D = 12;
+  constexpr uint32_t MAX_IMAGE_LEVELS_CUBE = 15;
+  constexpr uint32_t MAX_IMAGE_ARRAY_LAYERS = 1024;
+  constexpr uint32_t MAX_PHYSICAL_DEVICE = 1;
+
+  constexpr uint32_t MAX_PHYSICAL_DEVICES = 1;
+  constexpr uint32_t NUM_DEVICE_QUEUE_SUPPORTED = 1;
+  constexpr uint32_t MAX_DEVICE_QUEUE_FAMILY_SUPPORTED  = 1;
+
 }
 }
