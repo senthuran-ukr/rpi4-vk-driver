@@ -5,18 +5,19 @@
 #include <string>
 namespace core
 {
-    class VkInstance_
+    class InstanceVk
     {
         public:
-        VkInstance_(){}
-        VkResult init(const VkInstanceCreateInfo* createInfo);
+        InstanceVk(){}
+
+        VkResult init(const VkAllocationCallbacks* pAllocator, VkInstanceCreateInfo* pInfo);
 
         VkResult enumeratePhysicalDevices(
         uint32_t*                                   pPhysicalDeviceCount,
         VkPhysicalDevice*                           pPhysicalDevices);
 
         private:
-        std::vector<PhysicalDevice_> m_physicalDevices;
+        PhysicalDeviceVk* m_physicalDevices = nullptr;
 
         VkApplicationInfo    mApplicationInfo;
         std::vector<std::string> mEnabledLayerNames;

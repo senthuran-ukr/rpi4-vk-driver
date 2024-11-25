@@ -1,32 +1,23 @@
 #include "instance.h"
 #include "caps.h"
+#include "vkobject.h"
+#include "utils/log.h"
 namespace core{
-    VkResult VkInstance_::enumeratePhysicalDevices(
-        uint32_t* pPhysicalDeviceCount,
-        VkPhysicalDevice* pPhysicalDevices)
-        {
-            if(pPhysicalDevices == nullptr)
-            {
-                *pPhysicalDeviceCount = limits::MAX_PHYSICAL_DEVICE;
-            }
-            else if(m_physicalDevices.size())// already enumerated?
-            {
-                for(uint32_t i = 0; i < m_physicalDevices.size(); ++i)
-                {
-                    pPhysicalDevices[i] = (VkPhysicalDevice)&m_physicalDevices[i];
-                }
-            }
-            else
-            {
-                // enumerate it
-                m_physicalDevices.resize(limits::MAX_PHYSICAL_DEVICE);
-                for(uint32_t i = 0; i < limits::MAX_PHYSICAL_DEVICE; ++i)
-                {
-                    m_physicalDevices[i] = PhysicalDevice_();
-                }
-            }
-            return VK_SUCCESS;
-        }
+VkResult InstanceVk::enumeratePhysicalDevices(
+    uint32_t* pPhysicalDeviceCount,
+    VkPhysicalDevice* pPhysicalDevices)
+{
+    if(pPhysicalDevices == nullptr)
+    {
+        *pPhysicalDeviceCount = 1;
+    }
+    else
+    {
+        // enumerate it
+        pPhysicalDevices[1] = DispatchableObjectPhysicalDevice::cast(m_physicalDevices);
+    }
+    return VK_SUCCESS;
+}
 }
 
 
@@ -37,13 +28,8 @@ extern "C"
         const VkAllocationCallbacks*                pAllocator,
         VkInstance*                                 pInstance)
     {
-        auto coreInstance = new core::VkInstance_();
-        VkResult result;
-        if((result = coreInstance->init(pCreateInfo)) != VK_SUCCESS)
-        {
-            return result;
-        }
-        *pInstance = (VkInstance)coreInstance;
+        *pInstance = VK_NULL_HANDLE;
+        VkResult result = core::DispatchableObject<VkInstance, core::InstanceVk>::create(pAllocator, pCreateInfo, pInstance);
         return result;
     }
 
@@ -53,7 +39,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDevices(
     uint32_t*                                   pPhysicalDeviceCount,
     VkPhysicalDevice*                           pPhysicalDevices)
     {
-        core::VkInstance_* coreInstance = CAST_TO_CORE(VkInstance, instance);
+        core::InstanceVk* coreInstance = CAST_TO_CORE(VkInstance, instance);
         return coreInstance->enumeratePhysicalDevices(pPhysicalDeviceCount, pPhysicalDevices);
     }
 }

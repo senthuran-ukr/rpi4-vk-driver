@@ -4,7 +4,8 @@
 #include "base.h"
 #include "defines.h"
 #include "log.h"
-#include  "logical_device.h"
+#include "logical_device.h"
+#include  "vkobject.h"
 #define SUPPORTED_QUEUE_FLAGS VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT
 
 static const VkQueueFamilyProperties g_queue_family_prop[] = 
@@ -200,29 +201,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkEnumeratePhysicalDevices(
     return VK_SUCCESS;
 }
 
-VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceFeatures(
-    VkPhysicalDevice                            physicalDevice,
-    VkPhysicalDeviceFeatures*                   pFeatures)
-{
-    assert(physicalDevice);
-    assert(pFeatures);
-    *pFeatures = device_features;
 
-}
-
-VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceFormatProperties(
-    VkPhysicalDevice                            physicalDevice,
-    VkFormat                                    format,
-    VkFormatProperties*                         pFormatProperties);
-
-VKAPI_ATTR VkResult VKAPI_CALL vkGetPhysicalDeviceImageFormatProperties(
-    VkPhysicalDevice                            physicalDevice,
-    VkFormat                                    format,
-    VkImageType                                 type,
-    VkImageTiling                               tiling,
-    VkImageUsageFlags                           usage,
-    VkImageCreateFlags                          flags,
-    VkImageFormatProperties*                    pImageFormatProperties);
 
 VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceProperties(
     VkPhysicalDevice                            physicalDevice,
@@ -233,26 +212,8 @@ VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceQueueFamilyProperties(
     uint32_t*                                   pQueueFamilyPropertyCount,
     VkQueueFamilyProperties*                    pQueueFamilyProperties)
 {
-    assert(physicalDevice);
-    assert(pQueueFamilyPropertyCount);
-    assert(pQueueFamilyProperties);
-    if(pQueueFamilyProperties == NULL)
-    {
-        *pQueueFamilyPropertyCount = MAX_DEVICE_QUEUE_FAMILY_SUPPORTED;
-        return;
-    }
 
-    // make sure not exceed the max
-    assert(*pQueueFamilyPropertyCount <= MAX_DEVICE_QUEUE_FAMILY_SUPPORTED);
-    uint32_t num_queue_family = min(MAX_DEVICE_QUEUE_FAMILY_SUPPORTED, *pQueueFamilyPropertyCount);
-
-    for(uint32_t i = 0; i < num_queue_family; ++i)
-    {
-        pQueueFamilyProperties[i].queueCount = 1;
-        pQueueFamilyProperties[i].queueFlags = SUPPORTED_QUEUE_FLAGS;
-        pQueueFamilyProperties[i].timestampValidBits = 0;
-        pQueueFamilyProperties[i].minImageTransferGranularity = VkExtent3D{0,0,0};
-    }
+    core::DispatchableObjectPhysicalDevice::cast(physicalDevice)->getQueueFamilyProperties();
 }
 
 VKAPI_ATTR void VKAPI_CALL vkGetPhysicalDeviceMemoryProperties(
@@ -267,74 +228,20 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL vkGetDeviceProcAddr(
     VkDevice                                    device,
     const char*                                 pName);
 
-
-VKAPI_ATTR VkResult VKAPI_CALL vkGetDeviceQueue(VkDevice  device,
-    uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue)
-{
-    ASSERT(device, "Device must not be NULL");
-    ASSERT(pQueue != NULL, "pQueue must not be NULL");
-
-    ASSERT(queueFamilyIndex < num_queue_families, "queueFamilyIndex must be less than number of queue families supported");
-    ASSERT(queueIndex < device->queue_family[queueFamilyIndex].num_queues);
-    *pQueue = device->queue_family[queueFamilyIndex].queue[queueIndex];
-}
-
 namespace core{
-VkResult VkLogicalDevice_::init(
-    const VkDeviceCreateInfo*                   pCreateInfo,
-    const VkAllocationCallbacks*                pAllocator)
+VkResult LogicalDeviceVk::getQueue(uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue)const
 {
-    UNUSED_VARIABLE(pAllocator);
-
-    ASSERT(pCreateInfo, "Physical device must be valid");
-
-    // Process supported extensions
-    for(uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; ++i)
-    {
-        int32_t extension_id = -1;
-        if((extension_id = is_device_extension_supported(
-                pCreateInfo->ppEnabledExtensionNames[i])) != -1)
-        {
-           mInfo.enabledDeviceExtensionsIdx[i] = extension_id;
-            ++mInfo.numEnabledExtensions;
-        }
-        else {
-            LOG_E("Requested extension %s not supported",
-                      pCreateInfo->ppEnabledExtensionNames[i]);
-        }
-    }
-
-    // @TODO Process supported Layers
-
-    if(pCreateInfo->pEnabledFeatures)
-    {
-        memcpy(&mInfo.enabledFeatures, pCreateInfo->pEnabledFeatures, sizeof(VkPhysicalDeviceFeatures));
-        update_device_feature(&mInfo.enabledFeatures);
-    }
-
-    if(pCreateInfo->pQueueCreateInfos)
-    {
-        for(uint32_t i = 0; i < pCreateInfo->queueCreateInfoCount; ++i)
-        {
-            const VkDeviceQueueCreateInfo* queue_info = &pCreateInfo->pQueueCreateInfos[i];
-
-            // Allocate the memory
-            _pDevice->queue_family[queue_info->queueFamilyIndex].num_queues = queue_info->queueCount;
-            ASSERT(queue_info->queueCount == 1, "Queue Count must be 1");
-            ASSERT(queue_info->queueFamilyIndex < limits::MAX_DEVICE_QUEUE_FAMILY_SUPPORTED, "");
-            mQueues.resize(queue_info->queueCount);
-            for(uint32_t j = 0; j < queue_info->queueCount; ++j)
-            {   
-                mQueues[i] = VkQueue_(queue_info->queueFamilyIndex);
-            }
-
-            _pDevice->queue_family[i].num_queues = queue_info->queueCount;
-            _pDevice->queue_family[i].flags = queue_info->flags;
-        }
-    }
+    auto it = mQueues.find(queueFamilyIndex);
+    if(it == mQueues.end())
+        return VK_INCOMPLETE;
+    if(it->second.size() <= queueIndex)
+        return VK_INCOMPLETE;
+    *pQueue = DispatchableObjectQueue::cast(it->second[queueIndex]);
     return VK_SUCCESS;
 }
 
+
+}
 VKAPI_ATTR void VKAPI_CALL vkDestroyDevice(
     VkDevice                                    device,
     const VkAllocationCallbacks*                pAllocator)
@@ -344,6 +251,30 @@ VKAPI_ATTR void VKAPI_CALL vkDestroyDevice(
     Vk_Device* _device = device;
     FREE(_device);
 }
+
+
+VKAPI_ATTR VkResult VKAPI_CALL vkGetDeviceQueue(VkDevice  device,
+    uint32_t queueFamilyIndex, uint32_t queueIndex, VkQueue* pQueue)
+{
+    ASSERT(device, "Device must not be NULL");
+    ASSERT(pQueue != NULL, "pQueue must not be NULL");
+
+    return core::DispatchableObjectLogicalDevice::cast(device)->getQueue(queueFamilyIndex, queueIndex, pQueue);
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL vkCreateGraphicsPipelines(
+    VkDevice                                    device,
+    VkPipelineCache                             pipelineCache,
+    uint32_t                                    createInfoCount,
+    const VkGraphicsPipelineCreateInfo*         pCreateInfos,
+    const VkAllocationCallbacks*                pAllocator,
+    VkPipeline*                                 pPipelines)
+{
+    ASSERT(device, "Device must not be NULL");
+    return core::DispatchableObjectLogicalDevice::cast(device)->createGraphicsPipeline(pipelineCache, createInfoCount, 
+        pCreateInfos, pAllocator, pPipelines);
+}
+
 
 
 

@@ -2,7 +2,7 @@
 #include "defines.h"
 #include "string.h"
 #include  "version.h"
-
+#include <map>
 namespace core{
 
 
@@ -47,5 +47,12 @@ namespace Limits
   constexpr uint32_t NUM_DEVICE_QUEUE_SUPPORTED = 1;
   constexpr uint32_t MAX_DEVICE_QUEUE_FAMILY_SUPPORTED  = 1;
 
+  struct QueueFamily
+  {
+    uint32_t numQueueSupported;
+    bool supportPresentation;
+  };
+
+  std::map<uint32_t, QueueFamily> queueFamily = {{VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT}, QueueFamily{1u, true}};
 }
 }

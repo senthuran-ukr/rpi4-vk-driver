@@ -1,26 +1,36 @@
 #include "physical_device.h"
 #include "base.h"
+#include "vkobject.h"
 namespace core
 {
-VkResult VkPhysicalDevice_::createDevice(
+VkResult PhysicalDeviceVk::createDevice(
     const VkDeviceCreateInfo*                   pCreateInfo,
     const VkAllocationCallbacks*                pAllocator,
     VkDevice*                                   pDevice)
     {
-        VkLogicalDevice_* logicalDevice = new VkLogicalDevice_();
-        if(logicalDevice == nullptr)
-            return VK_ERROR_OUT_OF_HOST_MEMORY;
-            
-        VkResult result = logicalDevice->init(pCreateInfo);
-        if(result)return result;
-        mLogicalDevices.push_back(logicalDevice);
-        *pDevice = (VkDevice)logicalDevice;
-        return VK_SUCCESS;
+        VkResult result = DispatchableObject::create(pAllocator, pCreateInfo, pDevice);
+        if(result)
+            return result;
+
+        mLogicalDevices.push_back(*pDevice);
+        return result;
+    }
+
+void PhysicalDeviceVk::getQueueFamilyProperties(uint32_t pQueueFamilyPropertyCount,
+                                        VkQueueFamilyProperties *pQueueFamilyProperties )const
+{
+    ASSERT(pQueueFamilyPropertyCount != nullptr);
+    if(pQueueFamilyProperties == nullptr)
+    {
+        *pQueueFamilyPropertyCount = mQueueFamilyProperties.size();
+        return;
+    }
+    ASSERT(*pQueueFamilyPropertyCount <= mQueueFamilyProperties.size());
+    for(uint32_t i = 0; i < *pQueueFamilyPropertyCount; ++i)
+    {
+        pQueueFamilyProperties[i] = mQueueFamilyProperties[i];
     }
 }
-
-
-
 
 extern "C"
 {
@@ -30,7 +40,7 @@ VKAPI_ATTR VkResult VKAPI_CALL vkCreateDevice(
     const VkAllocationCallbacks*                pAllocator,
     VkDevice*                                   pDevice)
     {
-        core::VkPhysicalDevice_* corePhyDevice = CAST_TO_CORE(VkPhysicalDevice, physicalDevice);
-        return corePhyDevice->createDevice(pCreateInfo, pAllocator, pDevice);
+        core::PhysicalDeviceVk* phyDevice_ = core::DispatchableObject::cast(physicalDevice);
+        return phyDevice_->createDevice(pCreateInfo, pAllocator, pDevice);
     }
 }
